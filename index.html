@@ -459,7 +459,7 @@ function buildKeyForCheckbox(cb){
   const section = cb.closest('section').dataset.section;
   const wIdx = weekdayIndexFromClass(td);
   const dateObj = dateForWeekday(currentWeek, wIdx);
-  const dayISO = dateObj.toISOString().slice(0,10); // chave real por data
+  const dayISO = dateObj.toISOString().slice(0,10) + '_W' + currentWeek.label; // chave real por data e semana
   const rowLabel = (row.querySelector('td:first-child')?.textContent || 'row').trim().replace(/\s+/g,'_').slice(0,60);
   return `${dayISO}|${section}|${rowLabel}`;
 }
