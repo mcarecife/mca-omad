@@ -664,6 +664,77 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
   e.target.value = '';
 });
 </script>
+<!-- Supabase SDK -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  // === CONFIGURAÇÃO ===
+  const SUPABASE_URL = "https://srmavbuaarejrqlibyha.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const PROFILE_ID = "marcio"; // pode alterar se quiser diferenciar usuários
 
+  // === FUNÇÕES PRINCIPAIS ===
+  function isoToday() {
+    const d = new Date(); d.setHours(0,0,0,0);
+    return d.toISOString().slice(0,10);
+  }
+
+  function collectState() {
+    const all = {};
+    for (let i=0;i<localStorage.length;i++) {
+      const k = localStorage.key(i);
+      if (k.startsWith("mca.")) {
+        try { all[k] = JSON.parse(localStorage.getItem(k)); }
+        catch { all[k] = localStorage.getItem(k); }
+      }
+    }
+    return all;
+  }
+
+  function applyState(stateObj) {
+    Object.entries(stateObj).forEach(([k,v]) => {
+      localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
+    });
+    location.reload();
+  }
+
+  async function syncUp() {
+    const day = isoToday();
+    const state = collectState();
+    const { error } = await sb.from("daily_state")
+      .upsert({ profile_id: PROFILE_ID, day, state, updated_at: new Date().toISOString() });
+    alert(error ? ("❌ Falha ao salvar: " + error.message) : ("✅ Salvo na nuvem: " + day));
+  }
+
+  async function syncDown() {
+    const day = isoToday();
+    const { data, error } = await sb.from("daily_state")
+      .select("state").eq("profile_id", PROFILE_ID).eq("day", day).maybeSingle();
+    if (error) return alert("❌ Falha ao carregar: " + error.message);
+    if (!data) return alert("⚠️ Nenhum dado encontrado para " + day);
+    applyState(data.state);
+  }
+
+  // === BOTÕES VISUAIS ===
+  (function addButtons(){
+    const bar = document.createElement("div");
+    Object.assign(bar.style,{
+      position:"fixed",top:"10px",right:"10px",zIndex:"9999",
+      display:"flex",gap:"8px"
+    });
+
+    const b1=document.createElement("button");
+    b1.textContent="Sync ↑"; b1.title="Salvar na nuvem";
+    Object.assign(b1.style,{padding:"6px 10px",borderRadius:"8px",border:"1px solid #ccc",background:"#f0f9ff"});
+    b1.onclick=syncUp;
+
+    const b2=document.createElement("button");
+    b2.textContent="Sync ↓"; b2.title="Baixar da nuvem";
+    Object.assign(b2.style,{padding:"6px 10px",borderRadius:"8px",border:"1px solid #ccc",background:"#f6ffed"});
+    b2.onclick=syncDown;
+
+    bar.append(b1,b2); document.body.append(bar);
+  })();
+</script>
 </body>
 </html>
