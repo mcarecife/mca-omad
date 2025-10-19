@@ -736,5 +736,14 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
     bar.append(b1,b2); document.body.append(bar);
   })();
 </script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // === CONFIGURAÇÃO DO SUPABASE ===
+  const SUPABASE_URL = "https://srmavbuaarejrqlibyha.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const PROFILE_ID = "marcio"; // pode alterar se quiser perfis diferentes
+</script>
 </body>
 </html>
