@@ -735,7 +735,18 @@ async function syncDown(){
     alert('Falha ao carregar (Sync ↓): ' + (err?.message||err));
   }
 }
-
+// Botão "Sincronizar Agora" (salva ↑ e baixa ↓ em sequência)
+document.getElementById('syncNowBtn')?.addEventListener('click', async () => {
+  const el = document.getElementById('syncStatus');
+  try {
+    if (el) el.textContent = '⏳ Sincronizando...';
+    await syncUp();    // salva o estado local na nuvem
+    await syncDown();  // lê de volta (garante convergência)
+    if (el) el.textContent = '✅ Sincronizado';
+  } catch (e) {
+    if (el) el.textContent = '❌ Erro na sincronização';
+  }
+});
 // ========== Inicialização ==========
 (function init(){
   // semana ativa no topo
