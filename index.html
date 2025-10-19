@@ -386,16 +386,17 @@ setRangeLabel();
 
 /* ====== CABEÇALHOS DE SEMANA ====== */
 function applyWeekHeaders(){
-  var weekStart=new Date(currentWeek.start);
-  var fmt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'});
-  var theads=document.querySelectorAll('table thead tr');
-  for(var t=0;t<theadS=theads.length,t<theadS;t++){
-    var tr=theads[t];
-    for(var i=0;i<7;i++){
-      var th=tr.querySelector('.col-th.'+classMap[i]);
-      if(th){
-        var d=new Date(weekStart.getTime()+i*msPerDay);
-        th.textContent=weekdays[i]+' ('+fmt.format(d)+')';
+  var weekStart = new Date(currentWeek.start);
+  var fmt = new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'2-digit' });
+  var theads = document.querySelectorAll('table thead tr');
+
+  for (var t = 0; t < theads.length; t++) {
+    var tr = theads[t];
+    for (var i = 0; i < 7; i++) {
+      var th = tr.querySelector('.col-th.' + classMap[i]);
+      if (th) {
+        var d = new Date(weekStart.getTime() + i * msPerDay);
+        th.textContent = weekdays[i] + ' (' + fmt.format(d) + ')';
       }
     }
   }
