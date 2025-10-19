@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MCA-OMAD – Guia Diário (Fase III) · v1.6</title>
-<link rel="manifest" href="manifest.webmanifest">
+<title>MCA-OMAD – Guia Diário (Fase III) • v1.7 (Sync estável)</title>
 <meta name="theme-color" content="#0f3b66">
+<link rel="manifest" href="manifest.webmanifest">
+
 <style>
   :root{
     --bg:#ffffff; --text:#111418; --muted:#6b7280; --card:#f7f8fa; --line:#e5e7eb;
@@ -46,7 +47,6 @@
   .hidden{display:none !important}
   .carousel{display:flex; gap:6px; align-items:center}
   .carousel .btn{padding:6px 10px}
-  /* Summary */
   .summary{display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:10px 12px; background:#fff; border:1px solid var(--line); border-radius:12px}
   .summary .kpi{display:flex; gap:6px; align-items:center; font-size:14px; padding:6px 10px; border-radius:10px; background:#f8fafc; border:1px solid #e5e7eb}
   .bar{height:10px; background:#e5e7eb; width:220px; border-radius:999px; overflow:hidden}
@@ -56,20 +56,21 @@
   .chart .col{width:22px; background:#e5e7eb; border-radius:6px; position:relative; overflow:hidden}
   .chart .col>div{position:absolute; bottom:0; left:0; right:0; background:#0f3b66}
   .chart .lab{font-size:11px; color:#374151; text-align:center}
+  .note{font-size:12px; color:#374151; margin-top:6px}
   @media print{ .toolbar{display:none !important} header{position:static} }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>MCA-OMAD – Guia Diário (Fase III) · v1.6</h1>
-    <p>Período: 19 de out. de 2025 → 8 de nov. de 2025 · Dia <span id="dnum">?</span>/21</p>
+    <h1>MCA-OMAD – Guia Diário (Fase III) • v1.7</h1>
+    <p>Período-alvo: 19/10 → 08/11/2025 · D<span id="dnum">?</span>/21 · <span id="modeLabel">Semana</span> <span id="wlabel">?</span> (<span id="dateLabel">–</span>)</p>
   </div>
   <div class="toolbar">
     <span class="chip" id="todayChip">Hoje: —</span>
+    <span class="chip" id="syncStatus">⏳ Aguardando…</span>
     <button class="btn" onclick="window.print()">📄 Exportar PDF</button>
     <button class="btn" id="installBtn" style="display:none">➕ Instalar</button>
-
     <button class="btn mode-btn" data-mode="semana">Visão: Semana</button>
     <div class="carousel hidden" id="dayCarousel">
       <button class="btn" id="prevDay">◀</button>
@@ -77,14 +78,12 @@
       <button class="btn" id="nextDay">▶</button>
     </div>
     <button class="btn mode-btn" data-mode="dia">Visão: Dia</button>
-
     <button class="btn week-btn" data-week="1">Semana 1</button>
     <button class="btn week-btn" data-week="2">Semana 2</button>
     <button class="btn week-btn" data-week="3">Semana 3</button>
-
     <button class="btn" id="resetBtn">♻ Resetar</button>
-    <button class="btn" id="syncUpBtn">Sync ↑</button>
-    <button class="btn" id="syncDownBtn">Sync ↓</button>
+    <button class="btn" id="exportBtn">💾 Exportar</button>
+    <label class="btn" for="importFile">📥 Importar<input id="importFile" type="file" accept="application/json" style="display:none"></label>
   </div>
 </header>
 
@@ -112,10 +111,7 @@
     </div>
   </section>
 
-  <!-- ====== SEÇÕES ====== -->
-  <!-- Mantenho as tabelas exatamente como você já tinha.
-       (Manhã / OMAD / Pré / Pós / Noite / Avançado) -->
-  <!-- ===== MANHÃ ===== -->
+  <!-- MANHÃ -->
   <section class="card manha" data-section="manha">
     <div class="band">🌅 Manhã <small class="meta">06:30–09:00</small></div>
     <div class="inner">
@@ -124,7 +120,7 @@
           <tr>
             <th>Suplemento / Medicação</th>
             <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
-            <th class="obs">Observações</th>
+            <th class="obs">Observação</th>
           </tr>
         </thead>
         <tbody>
@@ -190,7 +186,7 @@
     </div>
   </section>
 
-  <!-- ===== OMAD ===== -->
+  <!-- OMAD -->
   <section class="card omad" data-section="omad">
     <div class="band">☀️ OMAD / Almoço <small class="meta">13:00</small></div>
     <div class="inner">
@@ -199,7 +195,7 @@
           <tr>
             <th>Item</th>
             <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
-            <th class="obs">Observações</th>
+            <th class="obs">Observação</th>
           </tr>
         </thead>
         <tbody>
@@ -207,7 +203,7 @@
             <td>Carnes nobres + queijo</td>
             <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
             <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
-            <td class="obs">Total 450–500 g + 80–100 g de queijo.</td>
+            <td class="obs">Total 450–500 g (ex.: picanha, maminha, cupim) + 80–100 g de queijo.</td>
           </tr>
           <tr>
             <td>Verduras + batatas baby</td>
@@ -223,12 +219,156 @@
           </tr>
         </tbody>
       </table>
-      <div class="meta-dia">Meta: <em>Promover anabolismo limpo e saciedade com alta densidade nutricional.</em></div>
+      <div class="meta-dia">Meta: <em>Promover anabolismo limpo e saciedade plena com densidade nutricional máxima.</em></div>
     </div>
   </section>
 
-  <!-- ===== Pré, Pós, Noite, Avançado ===== -->
-  <!-- (mantidos conforme sua versão; omitidos aqui por espaço) -->
+  <!-- PRE-TREINO -->
+  <section class="card pre" data-section="pre">
+    <div class="band">🔥 Pré-treino <small class="meta">18:00–18:30</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Palatinose 10 g</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Dissolver em água 20–30 min antes.</td>
+          </tr>
+          <tr>
+            <td>Creatina 5–6 g</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Pode ir no mesmo copo da palatinose. Em dia sem treino: tomar à noite.</td>
+          </tr>
+          <tr>
+            <td>Acetyl-L-Carnitine 500 mg</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">15–20 min antes do treino. Energia mitocondrial + foco.</td>
+          </tr>
+          <tr>
+            <td>Hidrolift 500 mL</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 sachê completo (eletrólitos + vitamina C).</td>
+          </tr>
+          <tr>
+            <td>Tadalafila 10 mg</td>
+            <td class="off col col-dom">—</td><td class="off col col-seg">—</td><td class="off col col-ter">—</td><td class="off col col-qua">—</td><td class="off col col-qui">—</td><td class="off col col-sex">—</td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Uso apenas no <b>sábado</b>, se desejado.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="meta-dia">Meta: <em>Preparar o corpo para desempenho e expansão muscular preservando cetose funcional.</em></div>
+    </div>
+  </section>
+
+  <!-- POS-TREINO -->
+  <section class="card pos" data-section="pos">
+    <div class="band">💪 Pós-treino / Ceia <small class="meta">20:00–21:00</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shake: BodyBalance + Whey</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Proteína total 30–35 g · + morango (6–8) e goiaba (1–2).</td>
+          </tr>
+          <tr>
+            <td>Inulina / FOS</td>
+            <td class="col col-dom"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-seg">—</td>
+            <td class="col col-ter"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-qua">—</td>
+            <td class="col col-qui"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-sex">—</td>
+            <td class="col col-sab"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="obs">2–3 g em dias alternados (Dom/ Ter/ Qui/ Sáb <b>após 26/out</b>). Misturar no shake.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="meta-dia">Meta: <em>Otimizar síntese proteica e recuperação tecidual, restaurando glicogênio sem inflamar.</em></div>
+    </div>
+  </section>
+
+  <!-- NOITE -->
+  <section class="card noite" data-section="noite">
+    <div class="band">🌙 Noturno <small class="meta">21:00–22:30</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Magnesium Breakthrough (BiOptimizers)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 cápsula às ~21h. Evitar usar junto do café.</td>
+          </tr>
+          <tr>
+            <td>GABA + Melatonina</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Dose habitual. Tomar 15–30 min antes de deitar.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="meta-dia">Meta: <em>Induzir relaxamento profundo e reparo celular com alinhamento do eixo GH-GABA-sono.</em></div>
+    </div>
+  </section>
+
+  <!-- AVANCADO -->
+  <section class="card avancado" data-section="avancado">
+    <div class="band">⚡ Avançado (a partir de <b>26/out</b>) <span class="pill">início 26/out</span></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th><th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>R-ALA Cyclodextrin 500 mg</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="off col col-sab">—</td>
+            <td class="obs">Tomar 15–20 min após o GH (Seg–Sex).</td>
+          </tr>
+          <tr>
+            <td>Methyl Charge+ (sublingual)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 pump manhã + 1 pump noite (diário a partir de 26/out).</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="meta-dia">Meta: <em>Ativar rotas mitocondriais e sinalização redox com foco em longevidade celular.</em></div>
+      <div class="note">⚠️ Refeed: <b>26/out</b> e <b>09/nov</b> – <span class="pill">até 100 g</span> de carbo limpo (batata, arroz integral, burrata, frutas).</div>
+    </div>
+  </section>
 
   <div class="foot">
     <div><strong>Metas até 08/11/2025:</strong> Peso ≤ 85 kg · Massa magra ≥ 36 kg · HDL ≥ 50 mg/dL · T3 Livre ≥ 3,3 pg/mL · Sono ≥ 7 h</div>
@@ -237,158 +377,195 @@
 
 </div>
 
-<!-- ===== SCRIPTS ===== -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase SDK (uma única vez) -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
 <script>
-// ===== Config =====
-const tz = 'America/Belem';
-const start = new Date('2025-10-19T00:00:00');
-const end   = new Date('2025-11-08T23:59:59');
+// ========== CONFIGURAÇÕES ==========
+const SUPABASE_URL = "https://srmavbuaarejrqlibyha.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PROFILE_ID = "marcio";
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Belem';
+
+// Período-alvo fixo do ciclo
+const start = new Date('2025-10-19T12:00:00'); // 12h evita erro de virada fuso
+const end   = new Date('2025-11-08T12:00:00');
 const msPerDay = 86400000;
 const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const classMap  = ['col-dom','col-seg','col-ter','col-qua','col-qui','col-sex','col-sab'];
 
-let weeks = [
-  {label:1, start:new Date('2025-10-19T00:00:00'), end:new Date('2025-10-25T23:59:59')},
-  {label:2, start:new Date('2025-10-26T00:00:00'), end:new Date('2025-11-01T23:59:59')},
-  {label:3, start:new Date('2025-11-02T00:00:00'), end:new Date('2025-11-08T23:59:59')},
-];
+// ===== Estado persistente (localStorage) =====
+const STORE_KEY = 'mca_omad_v17';
+function loadState(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY))||{} }catch(_){ return {} } }
+function saveState(o){ localStorage.setItem(STORE_KEY, JSON.stringify(o)) }
+let state = loadState();
+if(!state.checks) state.checks = {}; // { key: true }
+if(!state.ui) state.ui = {};         // { mode, selectedDateISO, week }
 
-// ===== localStorage =====
-const STORE_KEY = 'mca_omad_v16';
-function loadState(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; } }
-function saveState(obj){ localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }
-let state = loadState(); if(!state.checks) state.checks = {}; if(!state.ui) state.ui = {};
-
-// ===== UI state =====
-const now = new Date();
-let selectedDate = state.ui.selectedDate ? new Date(state.ui.selectedDate) : new Date(Math.min(Math.max(now, start), end));
+// ===== Datas iniciais & modo =====
+function todayLocalNoon(){
+  const d = new Date(); d.setHours(12,0,0,0); return d;
+}
+const now = todayLocalNoon();
+let selectedDate = state.ui.selectedDateISO ? new Date(state.ui.selectedDateISO) : new Date(Math.min(Math.max(now, start), end));
 let mode = state.ui.mode || 'semana';
+const weeks = [
+  {label:1, start:new Date('2025-10-19T12:00:00'), end:new Date('2025-10-25T12:00:00')},
+  {label:2, start:new Date('2025-10-26T12:00:00'), end:new Date('2025-11-01T12:00:00')},
+  {label:3, start:new Date('2025-11-02T12:00:00'), end:new Date('2025-11-08T12:00:00')},
+];
 let currentWeek = weeks.find(w => selectedDate>=w.start && selectedDate<=w.end) || weeks[0];
 
-function persistUI(){
-  state.ui = { mode, selectedDate: selectedDate.toISOString(), week: currentWeek.label };
-  saveState(state);
-}
-
-// ===== Header labels =====
+// ========== UI HEADER ==========
+function fmtDate(d){ return new Intl.DateTimeFormat('pt-BR',{dateStyle:'medium', timeZone:tz}).format(d) }
+function fmtDayLabel(d){ return new Intl.DateTimeFormat('pt-BR',{weekday:'long', day:'2-digit', month:'2-digit', timeZone:tz}).format(d) }
 function refreshHeader(){
   const dnum = Math.floor((selectedDate - start)/msPerDay) + 1;
   document.getElementById('dnum').textContent = Math.min(Math.max(dnum,1),21);
-  document.getElementById('todayChip').textContent = 'Hoje: ' +
-    new Intl.DateTimeFormat('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' }).format(new Date());
-  document.getElementById('sumDay').textContent =
-    new Intl.DateTimeFormat('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit' }).format(selectedDate);
+  document.getElementById('wlabel').textContent = currentWeek.label;
+  document.getElementById('modeLabel').textContent = mode==='dia' ? 'Dia' : 'Semana';
+  document.getElementById('dateLabel').textContent = fmtDate(selectedDate);
+  document.getElementById('todayChip').textContent = 'Hoje: ' + fmtDayLabel(now);
 }
 
-// ===== Week headers =====
+// Cabeçalhos das semanas com as datas certas
 function applyWeekHeaders(){
-  const fmt = new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'2-digit' });
   const weekStart = new Date(currentWeek.start);
-  document.querySelectorAll('thead tr').forEach(tr => {
-    classMap.forEach((cls, i)=>{
+  document.querySelectorAll('thead tr').forEach(tr=>{
+    classMap.forEach((cls,i)=>{
       const th = tr.querySelector('.col-th.'+cls);
-      if (th){
-        const d = new Date(weekStart.getTime() + i*msPerDay);
-        th.textContent = weekdays[i] + ' (' + fmt.format(d) + ')';
-      }
+      if (!th) return;
+      const d = new Date(weekStart.getTime()+i*msPerDay);
+      const dm = new Intl.DateTimeFormat('pt-BR',{day:'2-digit', month:'2-digit', timeZone:tz}).format(d);
+      th.textContent = `${weekdays[i]} (${dm})`;
     });
   });
 }
 
-// ===== Mode switches =====
-function showOnlyDay(dateObj){
-  currentWeek = weeks.find(w => dateObj>=w.start && dateObj<=w.end) || weeks[0];
-  applyWeekHeaders();
-  const wIdx = dateObj.getDay();
-  const keep = classMap[wIdx];
-  document.querySelectorAll('.col-th').forEach(th=> th.classList.add('hidden'));
-  document.querySelectorAll('.'+keep+'.col-th').forEach(th=> th.classList.remove('hidden'));
-  document.querySelectorAll('td.col').forEach(td=> td.classList.add('hidden'));
-  document.querySelectorAll('td.'+keep).forEach(td=> td.classList.remove('hidden'));
-  document.getElementById('dayLabel').textContent =
-    new Intl.DateTimeFormat('pt-BR', { weekday:'long', day:'2-digit', month:'2-digit' }).format(dateObj);
-  updateSummary();
+// ========== Helpers de data/dia ==========
+function dateForWeekday(w, weekdayIndex){ // 0..6
+  return new Date(w.start.getTime() + weekdayIndex*msPerDay);
 }
-function showAllDays(){
-  document.querySelectorAll('.col-th').forEach(th=> th.classList.remove('hidden'));
-  document.querySelectorAll('td.col').forEach(td=> td.classList.remove('hidden'));
-  applyWeekHeaders();
-  updateSummary();
+function weekdayIndexFromClass(td){
+  const m = td.className.match(/col-(dom|seg|ter|qua|qui|sex|sab)/);
+  const map = {dom:0,seg:1,ter:2,qua:3,qui:4,sex:5,sab:6};
+  return m ? map[m[1]] : 0;
 }
+
+// ========== Persistência por DIA REAL ==========
+function buildKeyForCheckbox(cb){
+  const td = cb.closest('td');
+  const row = cb.closest('tr');
+  const section = cb.closest('section').dataset.section;
+  const wIdx = weekdayIndexFromClass(td);
+  const dateObj = dateForWeekday(currentWeek, wIdx);
+  const dayISO = dateObj.toISOString().slice(0,10); // chave real por data
+  const rowLabel = (row.querySelector('td:first-child')?.textContent || 'row').trim().replace(/\s+/g,'_').slice(0,60);
+  return `${dayISO}|${section}|${rowLabel}`;
+}
+
+function restoreCheckboxes(){
+  document.querySelectorAll('td.col input[type=checkbox]').forEach(cb=>{
+    const key = buildKeyForCheckbox(cb);
+    cb.dataset.key = key;
+    cb.checked = !!state.checks[key];
+    cb.onchange = ()=>{
+      state.checks[cb.dataset.key] = cb.checked;
+      saveState(state);
+      updateSummary(); updateChart();
+    };
+  });
+}
+
+// ========== Modo Semana/Dia ==========
 function setMode(newMode){
   mode = newMode;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.mode-btn[data-mode="${mode}"]`)?.classList.add('active');
   document.getElementById('dayCarousel').classList.toggle('hidden', mode!=='dia');
-  if (mode==='dia') showOnlyDay(selectedDate); else showAllDays();
-  persistUI(); refreshHeader();
+
+  if (mode==='dia'){ showOnlyDay(selectedDate); }
+  else { showAllDays(); highlightTodayColumn(); }
+
+  state.ui.mode = mode; state.ui.selectedDateISO = selectedDate.toISOString(); saveState(state);
+  refreshHeader(); updateSummary(); updateChart();
 }
 
-// ===== Week buttons =====
-document.querySelectorAll('.week-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.week-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const wlabel = Number(btn.dataset.week);
-    currentWeek = weeks.find(w=>w.label===wlabel) || weeks[0];
-    selectedDate = new Date(currentWeek.start);
-    if (mode==='dia') showOnlyDay(selectedDate); else { showAllDays(); }
-    persistUI(); refreshHeader(); updateChart(); window.scrollTo({top:0, behavior:'smooth'});
-  });
-});
-document.querySelector(`.week-btn[data-week="${currentWeek.label}"]`)?.classList.add('active');
+function showOnlyDay(dateObj){
+  // reposiciona currentWeek pelo dia escolhido
+  currentWeek = weeks.find(w => dateObj>=w.start && dateObj<=w.end) || weeks[0];
+  applyWeekHeaders();
 
-// ===== Day carousel =====
-document.getElementById('prevDay').addEventListener('click', ()=>{
-  selectedDate = new Date(Math.max(start, selectedDate.getTime() - msPerDay));
-  showOnlyDay(selectedDate); persistUI(); refreshHeader(); updateChart();
-});
-document.getElementById('nextDay').addEventListener('click', ()=>{
-  selectedDate = new Date(Math.min(end, selectedDate.getTime() + msPerDay));
-  showOnlyDay(selectedDate); persistUI(); refreshHeader(); updateChart();
-});
-
-// ===== Persist checkboxes =====
-function buildKeyForCheckbox(cb){
-  const td = cb.closest('td');
-  const row = cb.closest('tr');
-  const section = cb.closest('section').dataset.section || cb.closest('section').className;
-  const weekdayClass = (td.className.match(/col-(dom|seg|ter|qua|qui|sex|sab)/) || [])[0] || 'col-?';
-  const rowLabel = row.querySelector('td:first-child')?.textContent.trim().replace(/\s+/g,'_').slice(0,50) || 'row';
-  const weekStart = new Date(currentWeek.start).toISOString().slice(0,10);
-  return `${weekStart}|${section}|${rowLabel}|${weekdayClass}`;
-}
-function restoreCheckboxes(){
-  document.querySelectorAll('td.col input[type=checkbox]').forEach(cb => {
-    const key = buildKeyForCheckbox(cb);
-    cb.dataset.key = key;
-    if (state.checks[key] === true){ cb.checked = true; }
-    cb.addEventListener('change', () => {
-      state.checks[cb.dataset.key] = cb.checked;
-      saveState(state);
-      updateSummary(); updateChart();
-    });
-  });
-}
-restoreCheckboxes();
-
-// ===== Summary & Chart =====
-function countForDay(dateObj){
   const wIdx = dateObj.getDay();
-  const cls = classMap[wIdx];
-  let total = 0, done = 0;
-  document.querySelectorAll('tbody tr').forEach(tr => {
+  const keepClass = classMap[wIdx];
+
+  // Esconde todas as colunas exceto a do dia
+  document.querySelectorAll('.col-th').forEach(th=> th.classList.add('hidden'));
+  document.querySelectorAll('.'+keepClass+'.col-th').forEach(th=> th.classList.remove('hidden'));
+  document.querySelectorAll('td.col').forEach(td=> td.classList.add('hidden'));
+  document.querySelectorAll('td.'+keepClass).forEach(td=> td.classList.remove('hidden'));
+
+  document.getElementById('dayLabel').textContent = fmtDayLabel(dateObj);
+}
+
+function showAllDays(){
+  document.querySelectorAll('.col-th').forEach(th=> th.classList.remove('hidden'));
+  document.querySelectorAll('td.col').forEach(td=> td.classList.remove('hidden'));
+  applyWeekHeaders();
+}
+
+function highlightTodayColumn(){
+  document.querySelectorAll('.today').forEach(el=>el.classList.remove('today'));
+  const idx = now.getDay();
+  document.querySelectorAll('.'+classMap[idx]).forEach(td=>td.classList.add('today'));
+}
+
+// Navegação do carrossel diário
+document.addEventListener('click', (e)=>{
+  if (e.target.id==='prevDay'){
+    selectedDate = new Date(Math.max(start, selectedDate.getTime()-msPerDay));
+    setMode('dia');
+  }
+  if (e.target.id==='nextDay'){
+    selectedDate = new Date(Math.min(end, selectedDate.getTime()+msPerDay));
+    setMode('dia');
+  }
+});
+
+// Botões de semana
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.week-btn'); if(!btn) return;
+  document.querySelectorAll('.week-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const wlabel = Number(btn.dataset.week);
+  currentWeek = weeks.find(w=>w.label===wlabel) || weeks[0];
+  selectedDate = new Date(currentWeek.start);
+  if (mode==='dia') showOnlyDay(selectedDate); else showAllDays();
+  refreshHeader(); saveUI(); updateSummary(); updateChart();
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+function saveUI(){ state.ui = { mode, selectedDateISO:selectedDate.toISOString(), week: currentWeek.label }; saveState(state); }
+
+// ========== Summary e Chart ==========
+function countForSpecificDate(dateObj){
+  // conta apenas checkboxes da coluna do dia (mesmo em modo semana)
+  const idx = dateObj.getDay();
+  const cls = classMap[idx];
+  let total=0, done=0;
+  document.querySelectorAll('tbody tr').forEach(tr=>{
     const td = tr.querySelector('td.'+cls);
-    if (!td) return;
+    if(!td) return;
     const cb = td.querySelector('input[type=checkbox]');
-    if (cb){ total += 1; if (cb.checked) done += 1; }
+    if (cb){ total++; if (cb.checked) done++; }
   });
   return {total, done};
 }
+
 function updateSummary(){
-  const {total, done} = countForDay(selectedDate);
-  const pct = total ? Math.round(done*100/total) : 0;
+  const {total, done} = countForSpecificDate(selectedDate);
+  const pct = total? Math.round(done*100/total) : 0;
+  document.getElementById('sumDay').textContent = fmtDayLabel(selectedDate);
   document.getElementById('doneCount').textContent = done;
   document.getElementById('totalCount').textContent = total;
   document.getElementById('pct').textContent = pct + '%';
@@ -396,85 +573,147 @@ function updateSummary(){
   fill.style.width = pct + '%';
   fill.className = pct>=85 ? 'g' : (pct>=60 ? 'y' : 'r');
 }
+
 function updateChart(){
   const weekStart = new Date(currentWeek.start);
   const chart = document.getElementById('chart');
   chart.innerHTML = '';
   for(let i=0;i<7;i++){
     const d = new Date(weekStart.getTime() + i*msPerDay);
-    const {total, done} = countForDay(d);
-    const pct = total ? Math.round(done*100/total) : 0;
-    const col = document.createElement('div'); col.className = 'col';
+    const {total, done} = countForSpecificDate(d);
+    const pct = total? Math.round(done*100/total) : 0;
+    const col = document.createElement('div'); col.className='col';
     const bar = document.createElement('div'); bar.style.height = Math.max(3, Math.floor(0.8*pct)) + 'px';
     col.title = `${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][i]}: ${pct}% (${done}/${total})`;
     col.appendChild(bar); chart.appendChild(col);
   }
 }
-updateSummary(); updateChart(); applyWeekHeaders(); refreshHeader();
-document.querySelector(`.mode-btn[data-mode="${mode}"]`)?.classList.add('active');
-if (mode==='dia') { document.getElementById('dayCarousel').classList.remove('hidden'); showOnlyDay(selectedDate); }
 
-// ===== Reset =====
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  if (confirm('Deseja limpar todas as marcações e a visão atual?')){
-    state.checks = {}; state.ui = {};
-    saveState(state);
-    document.querySelectorAll('td.col input[type=checkbox]').forEach(cb => cb.checked = false);
-    mode = 'semana';
-    selectedDate = new Date(Math.min(Math.max(new Date(), start), end));
-    showAllDays(); applyWeekHeaders(); refreshHeader(); updateSummary(); updateChart();
-  }
-});
-
-// ===== PWA install =====
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+// ========== Restore / Reset / Export / Import ==========
+function restoreAll(){
+  restoreCheckboxes();
+  refreshHeader();
+  applyWeekHeaders();
+  (mode==='dia') ? showOnlyDay(selectedDate) : showAllDays();
+  if(mode==='semana') highlightTodayColumn();
+  updateSummary(); updateChart();
 }
-let deferredPrompt;
-const installBtn = document.getElementById('installBtn');
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block';
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('Deseja limpar TODAS as marcações deste ciclo?')){
+    state.checks = {}; saveState(state);
+    document.querySelectorAll('td.col input[type=checkbox]').forEach(cb => cb.checked = false);
+    updateSummary(); updateChart();
+  }
+};
+document.getElementById('exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); const stamp = new Date().toISOString().slice(0,10);
+  a.href=url; a.download=`MCA-OMAD_backup_${stamp}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+};
+document.getElementById('importFile').onchange = (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const r=new FileReader(); r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      state = { checks: data.checks||{}, ui: data.ui||state.ui }; saveState(state);
+      document.querySelectorAll('td.col input[type=checkbox]').forEach(cb=>{
+        const key = buildKeyForCheckbox(cb);
+        cb.dataset.key = key; cb.checked = !!state.checks[key];
+      });
+      if (state.ui?.selectedDateISO) selectedDate = new Date(state.ui.selectedDateISO);
+      if (state.ui?.mode) mode = state.ui.mode;
+      setMode(mode);
+      alert('Backup importado com sucesso.');
+    }catch(err){ alert('Falha ao importar: '+err.message); }
+  };
+  r.readAsText(file); e.target.value='';
+};
+
+// ========== PWA ==========
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+let deferredPrompt=null;
+const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault(); deferredPrompt=e; installBtn.style.display='inline-block';
 });
-installBtn?.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display = 'none';
+installBtn?.addEventListener('click', async ()=>{
+  if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice;
+  deferredPrompt=null; installBtn.style.display='none';
 });
 
-// ===== Supabase Sync =====
-const SUPABASE_URL = "https://srmavbuaarejrqlibyha.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const PROFILE_ID = "marcio";
+// ========== SYNC SUPABASE (Upsert sem erro de duplicidade) ==========
+// Estrutura da tabela esperada:
+// create table public.daily_state (
+//   profile_id text not null,
+//   day date not null,
+//   state jsonb not null,
+//   updated_at timestamptz default now(),
+//   primary key (profile_id, day)
+// );
+const syncStatus = document.getElementById('syncStatus');
+function isoToday(){ const d = new Date(); d.setHours(12,0,0,0); return d.toISOString().slice(0,10); }
 
-function isoToday(){ const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
-function collectState(){ return loadState(); }
-function applyFullState(newState){ localStorage.setItem(STORE_KEY, JSON.stringify(newState)); location.reload(); }
+// Captura TUDO deste app (um namespace só)
+function collectAppState(){
+  return { ...state }; // suficiente (checks + ui)
+}
+function applyAppState(s){
+  if(!s) return;
+  state = s; saveState(state);
+  restoreAll();
+}
+
+// Botões “Sync ↑/↓” visuais (opcionais)
+(function addSyncButtons(){
+  const bar=document.createElement('div');
+  Object.assign(bar.style,{position:'fixed',top:'10px',right:'10px',zIndex:'9999',display:'flex',gap:'8px'});
+  const b1=document.createElement('button'); b1.textContent='Sync ↑'; b1.title='Salvar na nuvem';
+  Object.assign(b1.style,{padding:'6px 10px',borderRadius:'8px',border:'1px solid #ccc',background:'#f0f9ff'});
+  const b2=document.createElement('button'); b2.textContent='Sync ↓'; b2.title='Baixar da nuvem';
+  Object.assign(b2.style,{padding:'6px 10px',borderRadius:'8px',border:'1px solid #ccc',background:'#f6ffed'});
+  b1.onclick = syncUp; b2.onclick = syncDown; bar.append(b1,b2); document.body.append(bar);
+})();
 
 async function syncUp(){
-  const day = isoToday();
-  const full = collectState();
-  const { error } = await sb
-    .from('daily_state')
-    .upsert(
-      { profile_id: PROFILE_ID, day, state: full, updated_at: new Date().toISOString() },
-      { onConflict: 'profile_id,day' } // evita erro de chave duplicada
-    );
-  alert(error ? ('❌ Erro: ' + error.message) : ('✅ Salvo na nuvem para ' + day));
+  try{
+    const day = isoToday();
+    const payload = { profile_id: PROFILE_ID, day, state: collectAppState(), updated_at: new Date().toISOString() };
+    const { error } = await sb.from('daily_state')
+      .upsert(payload, { onConflict: 'profile_id,day' });
+    if (error) throw error;
+    syncStatus.textContent = '✅ Salvo ('+day+')';
+  }catch(err){
+    syncStatus.textContent = '❌ Sync falhou';
+    alert('Falha ao salvar (Sync ↑): ' + (err?.message||err));
+  }
 }
+
 async function syncDown(){
-  const day = isoToday();
-  const { data, error } = await sb
-    .from('daily_state')
-    .select('state')
-    .eq('profile_id', PROFILE_ID)
-    .eq('day', day)
-    .maybeSingle();
-  if (error) return alert('❌ Erro: ' + error.message);
-  if (!data) return alert('⚠️ Nenhum dado encontrado para ' + day);
-  applyFullState(data.state);
+  try{
+    const day = isoToday();
+    const { data, error } = await sb.from('daily_state')
+      .select('state').eq('profile_id', PROFILE_ID).eq('day', day).maybeSingle();
+    if (error) throw error;
+    if (!data){ syncStatus.textContent='⚠️ Sem dados '+day; alert('Nenhum dado encontrado para '+day); return; }
+    applyAppState(data.state);
+    syncStatus.textContent='✅ Carregado ('+day+')';
+  }catch(err){
+    syncStatus.textContent='❌ Sync falhou';
+    alert('Falha ao carregar (Sync ↓): ' + (err?.message||err));
+  }
 }
-document.getElementById('syncUpBtn').addEventListener('click', syncUp);
-document.getElementById('syncDownBtn').addEventListener('click', syncDown);
+
+// ========== Inicialização ==========
+(function init(){
+  // semana ativa no topo
+  document.querySelector(`.week-btn[data-week="${weeks.findIndex(w=>selectedDate>=w.start&&selectedDate<=w.end)+1}"]`)?.classList.add('active');
+  restoreAll();
+  // modo inicial
+  setMode(mode);
+})();
 </script>
 </body>
 </html>
