@@ -562,7 +562,14 @@ document.addEventListener('click', (e)=>{
     setMode('dia');
   }
 });
-
+  
+// Botões de modo (Semana/Dia)
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  setMode(btn.dataset.mode); // 'semana' ou 'dia'
+});
+  
 // Botões de semana (Semana 1/2/3)
 document.addEventListener('click', (e)=>{
   const btn = e.target.closest('.week-btn'); 
