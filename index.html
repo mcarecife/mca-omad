@@ -393,9 +393,9 @@ const now = new Date();
 let selectedDate = state.ui.selectedDate ? new Date(state.ui.selectedDate) : new Date(Math.min(Math.max(now, start), end));
 let mode = state.ui.mode || 'semana';
 let weeks = [
-  {label:1, start:new Date('2025-10-19'), end:new Date('2025-10-25T23:59:59')},
-  {label:2, start:new Date('2025-10-26'), end:new Date('2025-11-01T23:59:59')},
-  {label:3, start:new Date('2025-11-02'), end:new Date('2025-11-08T23:59:59')},
+  {label:1, start:new Date('2025-10-19T00:00:00'), end:new Date('2025-10-25T23:59:59')},
+  {label:2, start:new Date('2025-10-26T00:00:00'), end:new Date('2025-11-01T23:59:59')},
+  {label:3, start:new Date('2025-11-02T00:00:00'), end:new Date('2025-11-08T23:59:59')},
 ];
 let currentWeek = weeks.find(w => selectedDate>=w.start && selectedDate<=w.end) || weeks[0];
 
