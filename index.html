@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MCA-OMAD – Guia Diário (Fase III) · PWA v1.6</title>
-<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f3b66">
 <style>
   :root{
@@ -16,32 +15,39 @@
   header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;z-index:10}
   h1{font-size:18px;margin:0;color:var(--accent)}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#0f3b66;cursor:pointer}
+  .btn{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#0f3b66;cursor:pointer}
   .btn:hover{background:#f3f4f6}
-  .chip{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #ccc;background:#f8fafc}
+  .chip{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc}
   .week-btn.active,.mode-btn.active{background:#0f3b66;color:#fff;border-color:#0f3b66}
   .wrap{padding:14px;max-width:980px;margin:0 auto}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
   .band{padding:8px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-  .manha .band{background:var(--blue)}.omad .band{background:var(--green)}.pre .band{background:var(--peach)}.pos .band{background:var(--steel)}.noite .band{background:var(--lilac)}.avancado .band{background:var(--gold)}
+  .obs{font-size:12px;color:#374151;text-align:left}
   table{width:100%;border-collapse:separate;border-spacing:0}
   th,td{padding:6px;font-size:13px;text-align:center;border-bottom:1px solid #e5e7eb}
   td:first-child,th:first-child{text-align:left}
   input[type=checkbox]{width:18px;height:18px}
   .today{background:var(--highlight)!important}
-  .off{background:var(--off);color:#999}
+  .off{background:var(--off);color:#9aa1a9}
   .hidden{display:none!important}
-  .carousel{display:flex;gap:6px;align-items:center}
+  .manha .band{background:var(--blue)} .omad .band{background:var(--green)}
+  .pre .band{background:var(--peach)} .pos .band{background:var(--steel)}
+  .noite .band{background:var(--lilac)} .avancado .band{background:var(--gold)}
   .bar{height:10px;background:#e5e7eb;width:220px;border-radius:999px;overflow:hidden}
   .bar>div{height:100%}
   .g{background:var(--good)}.y{background:var(--warn)}.r{background:var(--bad)}
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0b0f14;--text:#e9eef5;--card:#0e141b;--line:#1f2a37;--off:#121821;--highlight:#0f2235}
+    .btn{border-color:#324255;background:#0f1620;color:#cfe4f7}
+    .chip{border-color:#243243;background:#0f1620}
+  }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>MCA-OMAD – Guia Diário (Fase III) · PWA v1.6</h1>
-    <p><span id="dateLabel">—</span> · <span id="modeLabel">Semana</span></p>
+    <h1>MCA-OMAD – Guia Diário (Fase III) · v1.6</h1>
+    <p id="rangeLabel">—</p>
   </div>
   <div class="toolbar">
     <span class="chip" id="todayChip">Hoje: —</span>
@@ -57,86 +63,520 @@
 </header>
 
 <div class="wrap">
-  <section class="card manha">
-    <div class="band">🌅 Manhã</div>
-    <div class="inner">
-      <table><tr><td>GH</td><td class="col-dom"><input type="checkbox"></td><td class="col-ter"><input type="checkbox"></td></tr></table>
+
+  <!-- RESUMO -->
+  <section class="card">
+    <div class="band">📊 Adesão de hoje <span id="modeLabel">Semana</span></div>
+    <div style="padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="chip">Dia: <strong id="sumDay">—</strong></div>
+      <div class="chip">Feitos: <strong id="doneCount">0</strong>/<span id="totalCount">0</span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="bar"><div id="barFill" style="width:0%"></div></div>
+        <strong id="pct">0%</strong>
+      </div>
     </div>
   </section>
+
+  <!-- MANHÃ -->
+  <section class="card manha" data-section="manha">
+    <div class="band">🌅 Manhã <small>06:30–09:00</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento / Medicação</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GH (Genryzon)</td>
+            <td class="col col-dom"><input type="checkbox"></td>
+            <td class="off col col-seg">—</td>
+            <td class="col col-ter"><input type="checkbox"></td>
+            <td class="off col col-qua">—</td>
+            <td class="col col-qui"><input type="checkbox"></td>
+            <td class="off col col-sex">—</td>
+            <td class="off col col-sab">—</td>
+            <td class="obs">Dom 1,5 mg · Ter/Qui 1,0 mg · Aplicar ao acordar em <b>jejum absoluto</b>.</td>
+          </tr>
+          <tr>
+            <td>Café + C8</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">10 mL C8 no café preto (manhã). Opcional +5 mL à tarde.</td>
+          </tr>
+          <tr>
+            <td>Vitamina D3 + K2 (4 gotas)</td>
+            <td class="col col-dom"><input type="checkbox"></td>
+            <td class="off col col-seg">—</td>
+            <td class="col col-ter"><input type="checkbox"></td>
+            <td class="off col col-qua">—</td>
+            <td class="col col-qui"><input type="checkbox"></td>
+            <td class="off col col-sex">—</td>
+            <td class="off col col-sab">—</td>
+            <td class="obs"><b>Mesmos dias do GH</b> (Dom/Ter/Qui). Tomar 30–60 min após GH, com café + 10 mL C8.</td>
+          </tr>
+          <tr>
+            <td>Liberdya (Venvanse – gotas)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Dose habitual prescrita, após café + C8.</td>
+          </tr>
+          <tr>
+            <td>Ômega-3 (Sports Research)</td>
+            <td class="off col col-dom">—</td>
+            <td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td>
+            <td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">2 cáps. manhã <b>Seg–Sex</b>; <b>Sábado opcional</b>. Domingo off.</td>
+          </tr>
+          <tr>
+            <td>Astaxantina 12 mg</td>
+            <td class="off col col-dom">—</td>
+            <td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td>
+            <td class="off col col-sab">—</td>
+            <td class="obs"><b>Seg–Sex</b>. Sábado e Domingo off.</td>
+          </tr>
+          <tr>
+            <td>Hidrolift (½ sachê ~250 mL)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Manhã. Em dia de treino, completar no pré-treino.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- OMAD -->
+  <section class="card omad" data-section="omad">
+    <div class="band">☀️ OMAD / Almoço <small>13:00</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Carnes nobres + queijo</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">450–500 g carne (picanha/maminha/cupim) + 80–100 g de queijo.</td>
+          </tr>
+          <tr>
+            <td>Verduras + batatas baby</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Verduras 100 g + azeite 10 mL · 3 batatas baby (~80 g).</td>
+          </tr>
+          <tr>
+            <td>CoQ10 (Ubiquinol 100 mg)</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="off col col-sab">—</td>
+            <td class="obs">Com refeição <b>Seg–Sex</b>. Sábado/Domingo off.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PRÉ -->
+  <section class="card pre" data-section="pre">
+    <div class="band">🔥 Pré-treino <small>18:00–18:30</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Palatinose 10 g</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">20–30 min antes do treino.</td>
+          </tr>
+          <tr>
+            <td>Creatina 5–6 g</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Pode ir no mesmo copo da palatinose. Dia sem treino: à noite.</td>
+          </tr>
+          <tr>
+            <td>Acetyl-L-Carnitine 500 mg</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">15–20 min antes (energia mitocondrial + foco).</td>
+          </tr>
+          <tr>
+            <td>Hidrolift 500 mL</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 sachê completo (eletrólitos + vit. C).</td>
+          </tr>
+          <tr>
+            <td>Tadalafila 10 mg</td>
+            <td class="off col col-dom">—</td><td class="off col col-seg">—</td><td class="off col col-ter">—</td>
+            <td class="off col col-qua">—</td><td class="off col col-qui">—</td><td class="off col col-sex">—</td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Apenas <b>Sábado</b> se desejado.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PÓS -->
+  <section class="card pos" data-section="pos">
+    <div class="band">💪 Pós-treino / Ceia <small>20:00–21:00</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shake: BodyBalance + Whey</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">Proteína total 30–35 g · + morango (6–8) e goiaba (1–2).</td>
+          </tr>
+          <tr>
+            <td>Inulina / FOS</td>
+            <td class="col col-dom"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-seg">—</td>
+            <td class="col col-ter"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-qua">—</td>
+            <td class="col col-qui"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="off col col-sex">—</td>
+            <td class="col col-sab"><input type="checkbox" title="Ativo a partir de 26/out"></td>
+            <td class="obs">2–3 g em dias alternados (Dom/Ter/Qui/Sáb <b>após 26/out</b>) no shake.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- NOITE -->
+  <section class="card noite" data-section="noite">
+    <div class="band">🌙 Noturno <small>21:00–22:30</small></div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Magnesium Breakthrough (BiOptimizers)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 cápsula às ~21h.</td>
+          </tr>
+          <tr>
+            <td>GABA + Melatonina</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">15–30 min antes de deitar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- AVANÇADO -->
+  <section class="card avancado" data-section="avancado">
+    <div class="band">⚡ Avançado (a partir de <b>26/out</b>)</div>
+    <div class="inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Suplemento</th>
+            <th class="col-th col-dom">Dom</th><th class="col-th col-seg">Seg</th><th class="col-th col-ter">Ter</th>
+            <th class="col-th col-qua">Qua</th><th class="col-th col-qui">Qui</th><th class="col-th col-sex">Sex</th><th class="col-th col-sab">Sáb</th>
+            <th class="obs">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>R-ALA Cyclodextrin 500 mg</td>
+            <td class="off col col-dom">—</td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="off col col-sab">—</td>
+            <td class="obs">Tomar 15–20 min após GH (Seg–Sex).</td>
+          </tr>
+          <tr>
+            <td>Methyl Charge+ (sublingual)</td>
+            <td class="col col-dom"><input type="checkbox"></td><td class="col col-seg"><input type="checkbox"></td><td class="col col-ter"><input type="checkbox"></td>
+            <td class="col col-qua"><input type="checkbox"></td><td class="col col-qui"><input type="checkbox"></td><td class="col col-sex"><input type="checkbox"></td><td class="col col-sab"><input type="checkbox"></td>
+            <td class="obs">1 pump manhã + 1 pump noite (diário a partir de 26/out).</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="obs">⚠️ Refeed: <b>26/out</b> e <b>09/nov</b> – até 100 g de carbo limpo (batata, arroz integral, burrata, frutas).</div>
+    </div>
+  </section>
+
 </div>
 
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL="https://srmavbuaarejrqlibyha.supabase.co";
-const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const PROFILE_ID="marcio";
+/* ====== CONFIG GERAL ====== */
+var SUPABASE_URL="https://srmavbuaarejrqlibyha.supabase.co";
+var SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNybWF2YnVhYXJlanJxbGlieWhhIiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjA4NzUzNjIsImV4cCI6MjA3NjQ1MTM2Mn0.LpKRrGABJWE3cgnQI5eShlYlKwyS_NUp1To7FPhJ1sQ";
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+var PROFILE_ID="marcio";
 
-// ===== Estado local =====
-const STORE_KEY="mca_omad_v16";
-function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{};}catch{return{};}}
-function save(obj){localStorage.setItem(STORE_KEY,JSON.stringify(obj));}
-let state=load(); if(!state.checks)state.checks={};
+/* ====== AGENDA ====== */
+var start=new Date('2025-10-19T00:00:00');
+var end  =new Date('2025-11-08T23:59:59');
+var weeks=[
+  {label:1,start:new Date('2025-10-19'),end:new Date('2025-10-25T23:59:59')},
+  {label:2,start:new Date('2025-10-26'),end:new Date('2025-11-01T23:59:59')},
+  {label:3,start:new Date('2025-11-02'),end:new Date('2025-11-08T23:59:59')}
+];
+var weekdays=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+var classMap=['col-dom','col-seg','col-ter','col-qua','col-qui','col-sex','col-sab'];
+var tz='America/Belem';
+var msPerDay=86400000;
 
-// ===== Checkboxes =====
-document.querySelectorAll("input[type=checkbox]").forEach(cb=>{
-  const key=cb.closest("td").className||Math.random();
-  cb.dataset.key=key;
-  cb.checked=!!state.checks[key];
-  cb.addEventListener("change",()=>{
-    state.checks[key]=cb.checked;
-    save(state);
-    syncUpDebounced();
-  });
+/* ====== ESTADO LOCAL ====== */
+var STORE_KEY='mca_omad_v16';
+function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{};}catch(e){return{};}}
+function save(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
+var state=load(); if(!state.checks)state.checks={}; if(!state.ui)state.ui={};
+
+var now=new Date();
+var selectedDate=state.ui.selectedDate?new Date(state.ui.selectedDate):new Date(Math.min(Math.max(now,start),end));
+var mode=state.ui.mode||'semana';
+var currentWeek=(function(){
+  for(var i=0;i<weeks.length;i++){if(selectedDate>=weeks[i].start&&selectedDate<=weeks[i].end)return weeks[i];}
+  return weeks[0];
+})();
+
+/* ====== LABELS ====== */
+function fmtDate(d,opts){return new Intl.DateTimeFormat('pt-BR',opts||{dateStyle:'medium',timeZone:tz}).format(d);}
+function setRangeLabel(){
+  document.getElementById('rangeLabel').textContent =
+    'Período: '+fmtDate(start)+' → '+fmtDate(end)+' · Dia '+(Math.min(Math.max(Math.floor((selectedDate-start)/msPerDay)+1,1),21))+'/21';
+  document.getElementById('todayChip').textContent='Hoje: '+new Intl.DateTimeFormat('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).format(new Date());
+}
+setRangeLabel();
+
+/* ====== CABEÇALHOS DE SEMANA ====== */
+function applyWeekHeaders(){
+  var weekStart=new Date(currentWeek.start);
+  var fmt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'});
+  var theads=document.querySelectorAll('table thead tr');
+  for(var t=0;t<theadS=theads.length,t<theadS;t++){
+    var tr=theads[t];
+    for(var i=0;i<7;i++){
+      var th=tr.querySelector('.col-th.'+classMap[i]);
+      if(th){
+        var d=new Date(weekStart.getTime()+i*msPerDay);
+        th.textContent=weekdays[i]+' ('+fmt.format(d)+')';
+      }
+    }
+  }
+}
+applyWeekHeaders();
+
+/* ====== HIGHLIGHT HOJE (SEMANA) ====== */
+function highlightToday(){
+  var olds=document.querySelectorAll('.today'); for(var i=0;i<olds.length;i++) olds[i].classList.remove('today');
+  var idx=(new Date()).getDay();
+  if(mode==='semana'){
+    var cells=document.querySelectorAll('.'+classMap[idx]);
+    for(var j=0;j<cells.length;j++) cells[j].classList.add('today');
+  }
+}
+
+/* ====== KEYS ====== */
+function buildKey(cb){
+  var td=cb.closest('td');
+  var row=cb.closest('tr');
+  var section=cb.closest('section').getAttribute('data-section')||'sec';
+  var m=td.className.match(/col\-(dom|seg|ter|qua|qui|sex|sab)/); var weekdayClass=m?m[0]:'col-?';
+  var rowLabel=(row.querySelector('td:first-child').textContent||'row').trim().replace(/\s+/g,'_').slice(0,50);
+  var weekStart=new Date(currentWeek.start).toISOString().slice(0,10);
+  return weekStart+'|'+section+'|'+rowLabel+'|'+weekdayClass;
+}
+
+/* ====== RESTORE CHECKBOXES ====== */
+function restoreBoxes(){
+  var boxes=document.querySelectorAll('td.col input[type=checkbox]');
+  for(var i=0;i<boxes.length;i++){
+    var cb=boxes[i];
+    var key=buildKey(cb);
+    cb.setAttribute('data-key',key);
+    if(state.checks[key]===true) cb.checked=true;
+    cb.addEventListener('change',function(e){
+      var k=e.target.getAttribute('data-key');
+      state.checks[k]=e.target.checked; save(state);
+      updateSummary(); autoSync();
+    });
+  }
+}
+restoreBoxes();
+
+/* ====== SUMMARY ====== */
+function countForDay(dateObj){
+  var idx=dateObj.getDay(), cls=classMap[idx], total=0,done=0;
+  var rows=document.querySelectorAll('tbody tr');
+  for(var r=0;r<rows.length;r++){
+    var td=rows[r].querySelector('td.'+cls);
+    if(!td) continue;
+    var cb=td.querySelector('input[type=checkbox]');
+    if(cb){ total++; if(cb.checked) done++; }
+  }
+  return {total:total,done:done};
+}
+function updateSummary(){
+  var cd=countForDay(selectedDate), pct=cd.total?Math.round(cd.done*100/cd.total):0;
+  document.getElementById('sumDay').textContent=fmtDate(selectedDate,{weekday:'long',day:'2-digit',month:'2-digit'});
+  document.getElementById('doneCount').textContent=cd.done;
+  document.getElementById('totalCount').textContent=cd.total;
+  document.getElementById('pct').textContent=pct+'%';
+  var fill=document.getElementById('barFill'); fill.style.width=pct+'%'; fill.className=(pct>=85?'g':(pct>=60?'y':'r'));
+}
+updateSummary();
+
+/* ====== MODOS ====== */
+function setMode(newMode){
+  mode=newMode;
+  document.getElementById('modeLabel').textContent=(mode==='dia'?'Dia':'Semana');
+  // botões visuais
+  var mbtns=document.querySelectorAll('.mode-btn'); for(var i=0;i<mbtns.length;i++){mbtns[i].classList.remove('active'); if(mbtns[i].getAttribute('data-mode')===mode) mbtns[i].classList.add('active');}
+  if(mode==='dia'){ showOnlyDay(selectedDate); }
+  else { showAllDays(); highlightToday(); }
+  state.ui.mode=mode; save(state);
+}
+function showOnlyDay(dateObj){
+  currentWeek=(function(){for(var i=0;i<weeks.length;i++){if(dateObj>=weeks[i].start&&dateObj<=weeks[i].end)return weeks[i];}return weeks[0];})();
+  applyWeekHeaders();
+  var idx=dateObj.getDay(), keep=classMap[idx];
+  // Esconde todos os cabeçalhos/dias
+  var ths=document.querySelectorAll('.col-th'); for(var i=0;i<ths.length;i++) ths[i].classList.add('hidden');
+  var keeps=document.querySelectorAll('.'+keep+'.col-th'); for(var j=0;j<keeps.length;j++) keeps[j].classList.remove('hidden');
+  var tds=document.querySelectorAll('td.col'); for(var k=0;k<tds.length;k++) tds[k].classList.add('hidden');
+  var tdKeep=document.querySelectorAll('td.'+keep); for(var q=0;q<tdKeep.length;q++) tdKeep[q].classList.remove('hidden');
+  updateSummary();
+}
+function showAllDays(){
+  var ths=document.querySelectorAll('.col-th'); for(var i=0;i<ths.length;i++) ths[i].classList.remove('hidden');
+  var tds=document.querySelectorAll('td.col'); for(var j=0;j<tds.length;j++) tds[j].classList.remove('hidden');
+  applyWeekHeaders(); updateSummary();
+}
+
+/* ====== SEMANAS (botões) ====== */
+var wbtns=document.querySelectorAll('.week-btn');
+for(var i=0;i<wbtns.length;i++){
+  (function(btn){
+    btn.addEventListener('click',function(){
+      for(var k=0;k<wbtns.length;k++) wbtns[k].classList.remove('active');
+      btn.classList.add('active');
+      var wl=Number(btn.getAttribute('data-week'));
+      for(var z=0;z<weeks.length;z++){ if(weeks[z].label===wl){ currentWeek=weeks[z]; break; } }
+      selectedDate=new Date(currentWeek.start);
+      applyWeekHeaders();
+      if(mode==='dia'){ showOnlyDay(selectedDate); } else { showAllDays(); highlightToday(); }
+      state.ui.selectedDate=selectedDate.toISOString(); state.ui.week=currentWeek.label; save(state);
+      setRangeLabel();
+    });
+  })(wbtns[i]);
+}
+// Marca o botão inicial
+var initBtn=document.querySelector('.week-btn[data-week="'+currentWeek.label+'"]'); if(initBtn) initBtn.classList.add('active');
+
+/* ====== RESET ====== */
+document.getElementById('resetBtn').addEventListener('click',function(){
+  if(confirm('Deseja limpar todas as marcações?')){
+    state.checks={}; save(state);
+    var cbs=document.querySelectorAll('td.col input[type=checkbox]'); for(var i=0;i<cbs.length;i++) cbs[i].checked=false;
+    updateSummary();
+    autoSync();
+  }
 });
 
-// ===== Sync =====
-function isoToday(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10);}
-async function syncUp(){
-  const day=isoToday();
-  const {error}=await sb.from("daily_state").upsert({profile_id:PROFILE_ID,day,state,updated_at:new Date().toISOString()});
-  alert(error?"❌ Falha: "+error.message:"✅ Salvo na nuvem");
-}
-async function syncDown(){
-  const day=isoToday();
-  const {data,error}=await sb.from("daily_state").select("state").eq("profile_id",PROFILE_ID).eq("day",day).maybeSingle();
-  if(error)return alert("❌ Erro: "+error.message);
-  if(!data)return alert("⚠️ Nenhum dado encontrado");
-  Object.entries(data.state.checks||{}).forEach(([k,v])=>{
-    state.checks[k]=v;
-    const cb=document.querySelector(`input[data-key='${k}']`);
-    if(cb)cb.checked=v;
-  });
-  save(state);
-  alert("⬇️ Estado baixado com sucesso");
-}
-document.getElementById("syncUpBtn").onclick=syncUp;
-document.getElementById("syncDownBtn").onclick=syncDown;
-
-// Auto-sync
-let timer=null;
-function syncUpDebounced(){clearTimeout(timer);timer=setTimeout(syncUp,800);}
-
-// ===== Reset =====
-document.getElementById("resetBtn").onclick=()=>{
-  if(confirm("Limpar todas as marcações?")){
-    state.checks={}; save(state);
-    document.querySelectorAll("input[type=checkbox]").forEach(cb=>cb.checked=false);
-  }
-};
-
-// ===== Modo Semana/Dia =====
-let mode="semana";
-function setMode(m){mode=m;document.getElementById("modeLabel").textContent=(m==="dia"?"Dia":"Semana");}
-document.querySelectorAll(".mode-btn").forEach(btn=>btn.onclick=()=>setMode(btn.dataset.mode));
+/* ====== MODO BOTÕES ====== */
+var modeBtns=document.querySelectorAll('.mode-btn');
+for(var i=0;i<modeBtns.length;i++){ modeBtns[i].addEventListener('click',function(){ setMode(this.getAttribute('data-mode')); }); }
 setMode(mode);
 
-// ===== Auto-download on open =====
-(async()=>{
-  const day=isoToday();
-  const {data}=await sb.from("daily_state").select("state").eq("profile_id",PROFILE_ID).eq("day",day).maybeSingle();
-  if(data&&data.state){Object.assign(state,data.state);save(state);}
+/* ====== SYNC SUPABASE ====== */
+function isoToday(){var d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10);}
+
+async function syncUp(){
+  try{
+    var day=isoToday();
+    var {error}=await sb.from('daily_state').upsert({profile_id:PROFILE_ID,day:day,state:state,updated_at:new Date().toISOString()});
+    alert(error?('❌ Falha ao salvar: '+error.message):'✅ Salvo na nuvem');
+  }catch(e){ alert('❌ Erro de rede'); }
+}
+async function silentSyncUp(){
+  try{
+    var day=isoToday();
+    await sb.from('daily_state').upsert({profile_id:PROFILE_ID,day:day,state:state,updated_at:new Date().toISOString()});
+  }catch(e){}
+}
+var syncTimer=null;
+function autoSync(){ if(syncTimer) clearTimeout(syncTimer); syncTimer=setTimeout(silentSyncUp,700); }
+
+async function syncDown(){
+  try{
+    var day=isoToday();
+    var {data,error}=await sb.from('daily_state').select('state').eq('profile_id',PROFILE_ID).eq('day',day).maybeSingle();
+    if(error){ alert('❌ Erro: '+error.message); return; }
+    if(!data){ alert('⚠️ Nenhum dado encontrado'); return; }
+    // Mescla estado e aplica
+    state=data.state||state; save(state);
+    // Reaplicar checkboxes
+    var cbs=document.querySelectorAll('td.col input[type=checkbox]');
+    for(var i=0;i<cbs.length;i++){
+      var cb=cbs[i];
+      var key=buildKey(cb); cb.setAttribute('data-key',key);
+      cb.checked=!!(state.checks&&state.checks[key]);
+    }
+    updateSummary();
+    alert('⬇️ Estado baixado com sucesso');
+  }catch(e){ alert('❌ Erro ao baixar'); }
+}
+document.getElementById('syncUpBtn').addEventListener('click',syncUp);
+document.getElementById('syncDownBtn').addEventListener('click',syncDown);
+
+// Auto-download ao abrir
+(function autoDownloadOnOpen(){
+  syncDown(); // tenta baixar o dia atual sem bloquear a UI
 })();
+
+// Realça hoje (modo semana)
+highlightToday();
+
+// Atualiza cabeçalho sempre que muda o modo/data
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){ highlightToday(); setRangeLabel(); updateSummary(); }
+});
 </script>
 </body>
 </html>
