@@ -480,69 +480,117 @@ function restoreCheckboxes(){
 
 // ========== Modo Semana/Dia ==========
 function setMode(newMode){
-  mode = newMode;
+  mode = (newMode === 'dia') ? 'dia' : 'semana';
+
+  // ativa botões de visão
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.mode-btn[data-mode="${mode}"]`)?.classList.add('active');
-  document.getElementById('dayCarousel').classList.toggle('hidden', mode!=='dia');
 
-  if (mode==='dia'){ showOnlyDay(selectedDate); }
-  else { showAllDays(); highlightTodayColumn(); }
+  // mostra/oculta carrossel do dia
+  const dc = document.getElementById('dayCarousel');
+  if (dc) dc.classList.toggle('hidden', mode !== 'dia');
 
-  state.ui.mode = mode; state.ui.selectedDateISO = selectedDate.toISOString(); saveState(state);
+  // garante que selectedDate esteja dentro do range e que a semana atual bata com a data
+  selectedDate = new Date(Math.min(Math.max(selectedDate.getTime(), start.getTime()), end.getTime()));
+  currentWeek = weeks.find(w => selectedDate>=w.start && selectedDate<=w.end) || weeks[0];
+  applyWeekHeaders();
+
+  if (mode === 'dia'){
+    showOnlyDay(selectedDate);
+  } else {
+    showAllDays();
+    highlightTodayColumn();
+  }
+
+  // persiste e atualiza UI
+  state.ui.mode = mode;
+  state.ui.selectedDateISO = selectedDate.toISOString();
+  saveState(state);
   refreshHeader(); updateSummary(); updateChart();
 }
 
 function showOnlyDay(dateObj){
-  // reposiciona currentWeek pelo dia escolhido
+  // Ajusta semana exibida com base na data escolhida
   currentWeek = weeks.find(w => dateObj>=w.start && dateObj<=w.end) || weeks[0];
   applyWeekHeaders();
 
+  // índice do dia (0..6) e classe correspondente
   const wIdx = dateObj.getDay();
   const keepClass = classMap[wIdx];
 
-  // Esconde todas as colunas exceto a do dia
+  // Esconde todos os THs de dia, exceto o do dia selecionado
   document.querySelectorAll('.col-th').forEach(th=> th.classList.add('hidden'));
-  document.querySelectorAll('.'+keepClass+'.col-th').forEach(th=> th.classList.remove('hidden'));
-  document.querySelectorAll('td.col').forEach(td=> td.classList.add('hidden'));
-  document.querySelectorAll('td.'+keepClass).forEach(td=> td.classList.remove('hidden'));
+  document.querySelectorAll(`.col-th.${keepClass}`).forEach(th=> th.classList.remove('hidden'));
 
-  document.getElementById('dayLabel').textContent = fmtDayLabel(dateObj);
+  // Esconde todas as células de dia e deixa só as do dia atual (em TODAS as seções)
+  document.querySelectorAll('td.col').forEach(td=> td.classList.add('hidden'));
+  document.querySelectorAll(`td.${keepClass}`).forEach(td=> td.classList.remove('hidden'));
+
+  // Label do carrossel
+  const lbl = document.getElementById('dayLabel');
+  if (lbl) lbl.textContent = fmtDayLabel(dateObj);
+
+  // No modo dia não há destaque “today”
+  document.querySelectorAll('.today').forEach(el => el.classList.remove('today'));
 }
 
 function showAllDays(){
+  // Mostra todas as colunas de todos os blocos
   document.querySelectorAll('.col-th').forEach(th=> th.classList.remove('hidden'));
   document.querySelectorAll('td.col').forEach(td=> td.classList.remove('hidden'));
   applyWeekHeaders();
 }
 
 function highlightTodayColumn(){
+  // Limpa marcas antigas
   document.querySelectorAll('.today').forEach(el=>el.classList.remove('today'));
+  // Coluna do “hoje” (baseado em `now`, já normalizado)
   const idx = now.getDay();
   document.querySelectorAll('.'+classMap[idx]).forEach(td=>td.classList.add('today'));
 }
 
-// Navegação do carrossel diário
+// Navegação do carrossel diário (◀ ▶)
 document.addEventListener('click', (e)=>{
   if (e.target.id==='prevDay'){
-    selectedDate = new Date(Math.max(start, selectedDate.getTime()-msPerDay));
-    setMode('dia');
+    const d = new Date(selectedDate.getTime() - msPerDay);
+    selectedDate = new Date(Math.max(d.getTime(), start.getTime()));
+    setMode('dia'); // re-render usando a nova data
   }
   if (e.target.id==='nextDay'){
-    selectedDate = new Date(Math.min(end, selectedDate.getTime()+msPerDay));
+    const d = new Date(selectedDate.getTime() + msPerDay);
+    selectedDate = new Date(Math.min(d.getTime(), end.getTime()));
     setMode('dia');
   }
 });
 
-// Botões de semana
+// Botões de semana (Semana 1/2/3)
 document.addEventListener('click', (e)=>{
-  const btn = e.target.closest('.week-btn'); if(!btn) return;
+  const btn = e.target.closest('.week-btn'); 
+  if(!btn) return;
+
+  // UI: ativa botão clicado
   document.querySelectorAll('.week-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+
+  // Encontra a semana e move a selectedDate para dentro dela, se necessário
   const wlabel = Number(btn.dataset.week);
-  currentWeek = weeks.find(w=>w.label===wlabel) || weeks[0];
-  selectedDate = new Date(currentWeek.start);
-  if (mode==='dia') showOnlyDay(selectedDate); else showAllDays();
-  refreshHeader(); saveUI(); updateSummary(); updateChart();
+  const w = weeks.find(x => x.label===wlabel) || weeks[0];
+  currentWeek = w;
+  if (selectedDate < w.start || selectedDate > w.end){
+    selectedDate = new Date(w.start); // ancora no início da semana
+  }
+
+  // Atualiza visão conforme o modo atual
+  if (mode==='dia') showOnlyDay(selectedDate);
+  else { showAllDays(); highlightTodayColumn(); }
+
+  // Persistência e UI
+  state.ui.selectedDateISO = selectedDate.toISOString();
+  state.ui.mode = mode;
+  state.ui.week = currentWeek.label;
+  saveState(state);
+
+  refreshHeader(); updateSummary(); updateChart();
   window.scrollTo({top:0, behavior:'smooth'});
 });
 function saveUI(){ state.ui = { mode, selectedDateISO:selectedDate.toISOString(), week: currentWeek.label }; saveState(state); }
