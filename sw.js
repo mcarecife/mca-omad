@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'mca-omad-v1-5';
+const CACHE_NAME = 'mca-omad-v1-9'; // ALTERADO para forçar atualização
 const ASSETS = [
   './',
   './index.html',
