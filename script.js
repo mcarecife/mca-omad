@@ -12,7 +12,7 @@ const msPerDay = 86400000;
 const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const classMap  = ['col-dom','col-seg','col-ter','col-qua','col-qui','col-sex','col-sab'];
 
-// ========== DADOS DO PROTOCOLO (NOVO: EM JSON) ==========
+// ========== DADOS DO PROTOCOLO (JSON) ==========
 const PROTOCOL_DATA = {
   manha: {
     title: '🌅 Manhã',
@@ -93,7 +93,10 @@ function todayLocalNoon(){
   const d = new Date(); d.setHours(12,0,0,0); return d;
 }
 const now = todayLocalNoon();
-let selectedDate = state.ui.selectedDateISO ? new Date(state.ui.selectedDateISO) : new Date(Math.min(Math.max(now, start), end));
+// FIX: Garante que selectedDate (e o dashboard) inicialize com HOJE, a menos que o usuário tenha ativamente salvo outra data
+let selectedDate = state.ui.selectedDateISO ? new Date(state.ui.selectedDateISO) : now;
+selectedDate = new Date(Math.min(Math.max(selectedDate.getTime(), start.getTime()), end.getTime())); // Garante que esteja dentro do ciclo
+
 let mode = state.ui.mode || 'semana';
 const weeks = [
   {label:1, start:new Date('2025-10-19T12:00:00'), end:new Date('2025-10-25T12:00:00')},
@@ -102,12 +105,9 @@ const weeks = [
 ];
 let currentWeek = weeks.find(w => selectedDate>=w.start && selectedDate<=w.end) || weeks[0];
 
-// ========== Renderização Dinâmica do Protocolo (NOVO) ==========
+// ========== Renderização Dinâmica do Protocolo ==========
 function renderProtocol() {
   const container = document.getElementById('protocol-container');
-  // Se você já tem marcações no app, o innerHTML = '' vai preservar o estado
-  // anterior, mas como estamos editando o código, vamos garantir que o container
-  // seja limpo antes de desenhar.
   container.innerHTML = '';
 
   for (const sectionKey in PROTOCOL_DATA) {
@@ -382,6 +382,7 @@ function countForSpecificDate(dateObj){
 function updateSummary(){
   const {total, done} = countForSpecificDate(selectedDate);
   const pct = total? Math.round(done*100/total) : 0;
+  // O dashboard mostra a data da selectedDate
   document.getElementById('sumDay').textContent = fmtDayLabel(selectedDate);
   document.getElementById('doneCount').textContent = done;
   document.getElementById('totalCount').textContent = total;
@@ -406,15 +407,70 @@ function updateChart(){
   }
 }
 
+// ========== INTEGRAÇÃO GEMINI (NOVO) ==========
+
+// Função placeholder que simula a chamada à IA
+function requestGeminiSuggestion() {
+    alert('Função de chamada da IA em construção. Capturando restrições para OMAD...');
+    
+    // 1. Captura as restrições OMAD do dia selecionado
+    const selectedDayIndex = selectedDate.getDay();
+    const omadData = PROTOCOL_DATA.omad.items;
+    
+    let restrictions = [];
+    omadData.forEach(item => {
+        if (item.schedule[selectedDayIndex] > 0) { // Se for ativo ou opcional (1 ou 2)
+            restrictions.push(item.name + ': ' + item.obs.replace(/<[^>]*>?/gm, '')); // Remove tags HTML
+        }
+    });
+
+    const prompt = `Gere uma receita de refeição única (OMAD) para um doutor em nutrologia. A refeição deve ser baseada nas seguintes restrições do protocolo (Hoje: ${weekdays[selectedDayIndex]}): ${restrictions.join('; ')}. O foco é anabolismo limpo, cetose e densidade nutricional. Retorne a resposta em português, em formato de receita (Nome, Ingredientes, Modo de Preparo e Análise Nutricional Breve).`;
+    
+    console.log("PROMPT ENVIADO PARA GEMINI:\n", prompt);
+    
+    // Futuramente, esta função fará uma chamada 'fetch' para um endpoint (API Gateway/Cloud Function)
+    // que, por sua vez, chamará a API do Google AI Studio/Gemini com o 'prompt'.
+    
+    // Por enquanto, mostramos apenas o prompt na tela:
+    document.getElementById('protocol-container').innerHTML = `
+        <section class="card avancado">
+            <div class="band">🧠 Sugestão Gemini</div>
+            <div class="inner">
+                <p><strong>Status:</strong> Enviando solicitação para o Gemini...</p>
+                <p><strong>Restrições Capturadas:</strong> ${restrictions.join('; ')}</p>
+                <p><strong>Prompt Gerado:</strong> <em>${prompt}</em></p>
+                <p>⚠️ O próximo passo é construir o backend que responderá a este prompt.</p>
+                <button class="btn" onclick="restoreAll()">Voltar ao Guia Diário</button>
+            </div>
+        </section>
+    ` + document.getElementById('protocol-container').innerHTML;
+
+    // Esconde o botão após a execução
+    document.getElementById('generateRecipeBtn').classList.add('hidden');
+}
+
 // ========== Restore / Reset / Export / Import ==========
 function restoreAll(){
+  // Chama o renderProtocol() novamente para ter certeza que a estrutura está no DOM
+  renderProtocol(); 
+  
   restoreCheckboxes();
   refreshHeader();
   applyWeekHeaders();
+  
+  // Condição para mostrar o dia (se modo dia) ou todos (se modo semana)
   (mode==='dia') ? showOnlyDay(selectedDate) : showAllDays();
-  if(mode==='semana') highlightTodayColumn();
-  updateSummary(); updateChart();
+
+  // Destaque do dia atual (HOJE)
+  highlightTodayColumn(); 
+  
+  // Garante que o botão de IA siga a lógica do modo
+  document.getElementById('generateRecipeBtn')?.classList.toggle('hidden', mode !== 'dia'); 
+
+  updateSummary(); 
+  updateChart();
 }
+
 document.getElementById('resetBtn').onclick = ()=>{
   if(confirm('Deseja limpar TODAS as marcações deste ciclo?')){
     state.checks = {}; saveState(state);
